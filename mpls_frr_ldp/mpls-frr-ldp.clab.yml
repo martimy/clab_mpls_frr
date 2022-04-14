@@ -1,0 +1,60 @@
+name: mpls_frr_ldp
+
+topology:
+  defaults:
+    kind: linux
+    # Choose one of the following two images for the hosts
+    # depending on which tools you need
+    image: wbitt/network-multitool:alpine-minimal
+    #image: wbitt/network-multitool:alpine-extra
+    # image: nicolaka/netshoot:latest
+  nodes:
+    r1:
+      image: frrouting/frr
+      binds:
+        - config/r1/daemons:/etc/frr/daemons
+        - config/r1/frr.conf:/etc/frr/frr.conf
+        - config/r1/90-mpls.conf:/etc/sysctl.d/90-mpls.conf
+      exec:
+        - sysctl -p /etc/sysctl.d/90-mpls.conf
+    r2:
+      image: frrouting/frr
+      binds:
+        - config/r2/daemons:/etc/frr/daemons
+        - config/r2/frr.conf:/etc/frr/frr.conf
+        - config/r2/90-mpls.conf:/etc/sysctl.d/90-mpls.conf
+      exec:
+        - sysctl -p /etc/sysctl.d/90-mpls.conf
+    r3:
+      image: frrouting/frr
+      binds:
+        - config/r3/daemons:/etc/frr/daemons
+        - config/r3/frr.conf:/etc/frr/frr.conf
+        - config/r3/90-mpls.conf:/etc/sysctl.d/90-mpls.conf
+      exec:
+        - sysctl -p /etc/sysctl.d/90-mpls.conf
+    r4:
+      image: frrouting/frr
+      binds:
+        - config/r4/daemons:/etc/frr/daemons
+        - config/r4/frr.conf:/etc/frr/frr.conf
+    r5:
+      image: frrouting/frr
+      binds:
+        - config/r5/daemons:/etc/frr/daemons
+        - config/r5/frr.conf:/etc/frr/frr.conf
+    host4:
+      exec:
+        - ip addr add 192.168.1.4/24 dev eth1
+        - ip route replace 0/0 via 192.168.1.1
+    host5:
+      exec:
+        - ip addr add 192.168.2.5/24 dev eth1
+        - ip route replace 0/0 via 192.168.2.1
+  links:
+    - endpoints: ["r1:eth1", "r2:eth2"]
+    - endpoints: ["r2:eth1", "r3:eth2"]
+    - endpoints: ["r3:eth1", "r5:eth2"]
+    - endpoints: ["r4:eth1", "r1:eth2"]
+    - endpoints: ["host4:eth1", "r4:eth2"]
+    - endpoints: ["host5:eth1", "r5:eth1"]
