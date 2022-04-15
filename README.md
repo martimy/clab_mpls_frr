@@ -7,6 +7,8 @@ This repository includes two MPLS implementations using [FRR](https://frrouting.
 
 To use this lab, you need to install [containerlab](https://containerlab.srlinux.dev/) (I used the [script method](https://containerlab.srlinux.dev/install/#install-script) Ubuntu 20.04 VM). You also need to have basic familiarity with [Docker](https://www.docker.com/).
 
+Also make sure MPLS is enabled on the host machine (where containerlab is installed). See below.
+
 For troubleshooting and traffic inspection, you may also install [Wireshark](https://www.wireshark.org/) and/or Tshark in the host machine/VM.
 
 Finally, clone this repository to your host VM:
@@ -14,6 +16,45 @@ Finally, clone this repository to your host VM:
 ```
 git clone https://github.com/martimy/clab_mpls_frr
 ```
+
+### Enabling MPLS
+
+To check if mpls is enabled on the host machine:
+
+```
+$ lsmod | grep mpls
+mpls_gso               16384  0
+mpls_iptunnel          20480  0
+mpls_router            40960  1 mpls_iptunnel
+ip_tunnel              24576  1 mpls_router
+```
+
+If you don't see the output above, load the modules and try again:
+
+```
+modprobe mpls_router
+modprobe mpls_gso
+modprobe mpls_iptunnel
+```
+
+To load the modules at boot time, add the following lines to /etc/modules-load.d/modules.conf:
+
+```
+cat >/etc/modules-load.d/modules.conf <<EOF
+mpls_router
+mpls_gso
+mpls_iptunnel
+EOF
+```
+
+Note also that MPLS needs to be enabled on each router. Therefore, lines similar to following are added to configuration of each router. 
+
+```
+sysctl -w net.mpls.conf.lo.input=1
+sysctl -w net.mpls.conf.eth1.input=1
+sysctl -w net.mpls.platform_labels=1048575
+```
+
 
 ## Lab1 - Manual labels
 
