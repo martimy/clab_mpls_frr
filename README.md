@@ -196,6 +196,15 @@ This lab demonstrates how an ISP can connect two customers with an overlapping I
 
 ![Topology 3 - VRF](img/mpls_vrf.png)
 
+Running this lab is a bit tricky because of a bug in the FRR, so you must do in stages:
+
+Initially, make sure the interface configuration in the starting configuration files (e.g. config/r1/frr.conf) are not assigned to a VFR.  
+
+```
+interface eth2
+  ...
+```
+
 Use the following command to start the lab:
 
 ```
@@ -208,26 +217,39 @@ Test direct connectivity between all nodes:
 ```
 ./test-direct-connectivity.sh
 ```
- 
-Then setup MPLS and VRF:
+
+Once ping is confirmed between each two adjacent routers, setup MPLS and VRF using the following script which enables MPLS, create VRFs and assign interfaces to them in the ISP routers.
 
 ```
 ./setup_mpls_vrf.sh
 ```
 
 
-To end the lab:
+There is a bug in FRR that causes changes to route distinguishers and route targets commands in the BGP configuration, so make sure you change the BGP configuration in routers R1 and R3 as follows:
 
 ```
-sudo clab destroy --topo mpls-frr-vrf.clab.yml
+router bgp 100 vrf blue
+  ...
+  address-family ipv4 unicast
+    ...
+    rd vpn export 100:1
+    rt vpn both 100:1
+    ...
+!
+router bgp 100 vrf red
+  ...
+  address-family ipv4 unicast
+    ...
+    rd vpn export 100:2
+    rt vpn both 100:2
+    ...
 ```
 
+After, the change, verify the routers in routers R1 and R3. They should be as follows:
 
 ```
-docker exec -it clab-mpls_frr_vrf-r1 vtysh -c "show ip route vrf all"
-```
+$ docker exec -it clab-mpls_frr_vrf-r1 vtysh -c "show ip route vrf all"
 
-```
 Codes: K - kernel route, C - connected, S - static, R - RIP,
        O - OSPF, I - IS-IS, B - BGP, E - EIGRP, N - NHRP,
        T - Table, v - VNC, V - VNC-Direct, A - Babel, F - PBR,
@@ -264,44 +286,38 @@ B>  192.168.2.0/24 [20/12] via 3.3.3.3 (vrf default) (recursive), label 81, weig
   *                          via 10.0.0.2, eth1 (vrf default), label 17/81, weight 1, 00:04:30
 ```
 
-```
-docker exec -it clab-mpls_frr_vrf-r3 vtysh -c "show ip route vrf all"
-```
+### Try this
 
+1. Monitor the traffic at any link in the network using Wireshark. If Wireshark is installed in the local machine, use:
 
-```
-Codes: K - kernel route, C - connected, S - static, R - RIP,
-       O - OSPF, I - IS-IS, B - BGP, E - EIGRP, N - NHRP,
-       T - Table, v - VNC, V - VNC-Direct, A - Babel, F - PBR,
-       f - OpenFabric,
-       > - selected route, * - FIB route, q - queued, r - rejected, b - backup
-       t - trapped, o - offload failure
+    ```
+    sudo ip netns exec clab-mpls_frr_static-r1 wireshark
+    ```
 
-VRF blue:
-B>  10.0.2.0/24 [20/0] via 1.1.1.1 (vrf default) (recursive), label 80, weight 1, 00:04:47
-  *                      via 10.0.1.2, eth2 (vrf default), label 16/80, weight 1, 00:04:47
-C>* 10.0.3.0/24 is directly connected, eth1, 00:08:59
-B>  192.168.1.0/24 [20/0] via 1.1.1.1 (vrf default) (recursive), label 80, weight 1, 00:04:47
-  *                         via 10.0.1.2, eth2 (vrf default), label 16/80, weight 1, 00:04:47
-S>* 192.168.2.0/24 [1/0] via 10.0.3.5, eth1, weight 1, 00:08:59
+   To use Wireshark from a remote machine, [use](https://github.com/srl-labs/containerlab/blob/96a107f2b3fd1c050ecaf7c3f237266d7ea3a4f1/docs/manual/wireshark.md):
 
-VRF default:
-K>* 0.0.0.0/0 [0/0] via 172.20.20.1, eth0, 00:09:02
-O>* 1.1.1.1/32 [110/20] via 10.0.1.2, eth2, label 16, weight 1, 00:08:10
-O>* 2.2.2.2/32 [110/10] via 10.0.1.2, eth2, weight 1, 00:08:11
-O   3.3.3.3/32 [110/0] is directly connected, lo, weight 1, 00:09:01
-C>* 3.3.3.3/32 is directly connected, lo, 00:09:01
-O>* 10.0.0.0/24 [110/20] via 10.0.1.2, eth2, label implicit-null, weight 1, 00:08:11
-O   10.0.1.0/24 [110/10] is directly connected, eth2, weight 1, 00:09:01
-C>* 10.0.1.0/24 is directly connected, eth2, 00:09:01
-O   172.20.20.0/24 [110/20] via 10.0.1.2, eth2, weight 1, 00:08:10
-C>* 172.20.20.0/24 is directly connected, eth0, 00:09:02
+    ```
+    ssh -p 2222 user@remotehost "sudo ip netns exec clab-mpls_frr_static-r1 tcpdump -U -nni eth1 -w -" | wireshark -k -i -
+    ```
 
-VRF red:
-B>  10.0.4.0/24 [20/0] via 1.1.1.1 (vrf default) (recursive), label 81, weight 1, 00:04:47
-  *                      via 10.0.1.2, eth2 (vrf default), label 16/81, weight 1, 00:04:47
-C>* 10.0.5.0/24 is directly connected, eth3, 00:08:59
-B>  192.168.1.0/24 [20/12] via 1.1.1.1 (vrf default) (recursive), label 81, weight 1, 00:04:47
-  *                          via 10.0.1.2, eth2 (vrf default), label 16/81, weight 1, 00:04:47
-S>* 192.168.2.0/24 [1/0] via 10.0.5.7, eth3, weight 1, 00:08:59
-```
+    The ssh command establishes a connection to is *remotehost* using port 2222 (optional, instead of the standard port 22) using *user* credentials, then run tcpdump on the *remotehost* (select the desired router and interface):
+
+    ```
+    sudo ip netns exec clab-mpls_frr_static-r1 tcpdump -U -nni eth1 -w -
+    ```
+
+    tcpdump options:
+
+    ```
+    -U Print undecoded NFS (Network File System) handles.
+    -nn : do not resolve hostnames or ports.
+    -i eth1 : capture packets on interface eth1
+    -w - Write the raw packets to the standard output
+    ```
+
+    The output of the tcpdump is piped to Wireshark (running locally), with these options:
+
+    ```
+    -k start capturing immediately
+    -i interface name -
+    ```
