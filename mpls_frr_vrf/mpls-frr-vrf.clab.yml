@@ -14,43 +14,18 @@ topology:
         - config/r1/daemons:/etc/frr/daemons
         - config/r1/frr.conf:/etc/frr/frr.conf
         - config/r1/90-mpls.conf:/etc/sysctl.d/90-mpls.conf
-      exec:
-        - sysctl -p /etc/sysctl.d/90-mpls.conf
-        - ip link add blue type vrf table 1
-        - ip link add red type vrf table 2
-        - ip link set eth2 vrf blue
-        - ip link set eth3 vrf red
-        - ip link set blue up
-        - ip link set red up
-        - ip link set eth0 down
     r2:
       image: frrouting/frr
       binds:
         - config/r2/daemons:/etc/frr/daemons
         - config/r2/frr.conf:/etc/frr/frr.conf
         - config/r2/90-mpls.conf:/etc/sysctl.d/90-mpls.conf
-      exec:
-        - sysctl -p /etc/sysctl.d/90-mpls.conf
-        - ip link add blue type vrf table 1
-        - ip link add red type vrf table 2
-        - ip link set blue up
-        - ip link set red up
-        - ip link set eth0 down
     r3:
       image: frrouting/frr
       binds:
         - config/r3/daemons:/etc/frr/daemons
         - config/r3/frr.conf:/etc/frr/frr.conf
         - config/r3/90-mpls.conf:/etc/sysctl.d/90-mpls.conf
-      exec:
-        - sysctl -p /etc/sysctl.d/90-mpls.conf
-        - ip link add blue type vrf table 1
-        - ip link add red type vrf table 2
-        - ip link set eth1 vrf blue
-        - ip link set eth3 vrf red
-        - ip link set blue up
-        - ip link set red up
-        - ip link set eth0 down
     r4:
       image: frrouting/frr
       binds:
