@@ -1,6 +1,6 @@
 # MPLS networks implementation using FRRouting
 
-This repository includes two MPLS implementations using [FRR](https://frrouting.org/) routers. The first lab sets the MPLS labels manually in three-router topology. In the second lab, the labels are distributed using LDP (Label Distribution Protocol) in three-router ISP network connecting two customer routers.
+This repository includes three MPLS implementations using [FRR](https://frrouting.org/) routers. The first lab sets the MPLS labels manually in three-router topology. In the second lab, the labels are distributed using LDP (Label Distribution Protocol) in three-router ISP network connecting two customer routers. The third lab uses Virtual Routing and Forwarding (VRF) and BGP to create L3 VPN tunnels across an ISP network.
 
 
 ## Requirements
@@ -47,7 +47,7 @@ mpls_iptunnel
 EOF
 ```
 
-Note also that MPLS needs to be enabled on each router. Therefore, lines similar to following are added to configuration of each router. 
+Note also that MPLS needs to be enabled on each router. Therefore, lines similar to following are added to configuration of each router.
 
 ```
 sysctl -w net.mpls.conf.lo.input=1
@@ -187,3 +187,24 @@ sudo clab destroy --topo mpls-frr-ldp.clab.yml
     User Datagram Protocol, Src Port: 646, Dst Port: 646
     Label Distribution Protocol
     ```
+
+## Lab3 - VRF
+
+This lab demonstrates how an ISP can connect two customers with an overlapping IP address space using VRFs.
+<documentation to be completed>
+
+
+![Topology 3 - VRF](img/mpls_vrf.png)
+
+Use the following command to start the lab:
+
+```
+cd mpls_frr_vrf
+sudo clab deploy --topo mpls-frr-vrf.clab.yml
+```
+
+To end the lab:
+
+```
+sudo clab destroy --topo mpls-frr-vrf.clab.yml
+```
