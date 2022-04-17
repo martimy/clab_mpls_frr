@@ -203,8 +203,105 @@ cd mpls_frr_vrf
 sudo clab deploy --topo mpls-frr-vrf.clab.yml
 ```
 
+Test direct connectivity between all nodes:
+
+```
+./test-direct-connectivity.sh
+```
+ 
+Then setup MPLS and VRF:
+
+```
+./setup_mpls_vrf.sh
+```
+
+
 To end the lab:
 
 ```
 sudo clab destroy --topo mpls-frr-vrf.clab.yml
+```
+
+
+```
+docker exec -it clab-mpls_frr_vrf-r1 vtysh -c "show ip route vrf all"
+```
+
+```
+Codes: K - kernel route, C - connected, S - static, R - RIP,
+       O - OSPF, I - IS-IS, B - BGP, E - EIGRP, N - NHRP,
+       T - Table, v - VNC, V - VNC-Direct, A - Babel, F - PBR,
+       f - OpenFabric,
+       > - selected route, * - FIB route, q - queued, r - rejected, b - backup
+       t - trapped, o - offload failure
+
+VRF blue:
+C>* 10.0.2.0/24 is directly connected, eth2, 00:08:44
+B>  10.0.3.0/24 [20/0] via 3.3.3.3 (vrf default) (recursive), label 80, weight 1, 00:04:30
+  *                      via 10.0.0.2, eth1 (vrf default), label 17/80, weight 1, 00:04:30
+S>* 192.168.1.0/24 [1/0] via 10.0.2.4, eth2, weight 1, 00:08:44
+B>  192.168.2.0/24 [20/0] via 3.3.3.3 (vrf default) (recursive), label 80, weight 1, 00:04:30
+  *                         via 10.0.0.2, eth1 (vrf default), label 17/80, weight 1, 00:04:30
+
+VRF default:
+K>* 0.0.0.0/0 [0/0] via 172.20.20.1, eth0, 00:08:45
+O   1.1.1.1/32 [110/0] is directly connected, lo, weight 1, 00:08:44
+C>* 1.1.1.1/32 is directly connected, lo, 00:08:44
+O>* 2.2.2.2/32 [110/10] via 10.0.0.2, eth1, weight 1, 00:07:59
+O>* 3.3.3.3/32 [110/20] via 10.0.0.2, eth1, label 17, weight 1, 00:07:49
+O   10.0.0.0/24 [110/10] is directly connected, eth1, weight 1, 00:08:03
+C>* 10.0.0.0/24 is directly connected, eth1, 00:08:44
+O>* 10.0.1.0/24 [110/20] via 10.0.0.2, eth1, label implicit-null, weight 1, 00:07:59
+O   172.20.20.0/24 [110/20] via 10.0.0.2, eth1, weight 1, 00:07:58
+C>* 172.20.20.0/24 is directly connected, eth0, 00:08:45
+
+VRF red:
+C>* 10.0.4.0/24 is directly connected, eth3, 00:08:44
+B>  10.0.5.0/24 [20/0] via 3.3.3.3 (vrf default) (recursive), label 81, weight 1, 00:04:30
+  *                      via 10.0.0.2, eth1 (vrf default), label 17/81, weight 1, 00:04:30
+S>* 192.168.1.0/24 [1/0] via 10.0.4.6, eth3, weight 1, 00:08:43
+B>  192.168.2.0/24 [20/12] via 3.3.3.3 (vrf default) (recursive), label 81, weight 1, 00:04:30
+  *                          via 10.0.0.2, eth1 (vrf default), label 17/81, weight 1, 00:04:30
+```
+
+```
+docker exec -it clab-mpls_frr_vrf-r3 vtysh -c "show ip route vrf all"
+```
+
+
+```
+Codes: K - kernel route, C - connected, S - static, R - RIP,
+       O - OSPF, I - IS-IS, B - BGP, E - EIGRP, N - NHRP,
+       T - Table, v - VNC, V - VNC-Direct, A - Babel, F - PBR,
+       f - OpenFabric,
+       > - selected route, * - FIB route, q - queued, r - rejected, b - backup
+       t - trapped, o - offload failure
+
+VRF blue:
+B>  10.0.2.0/24 [20/0] via 1.1.1.1 (vrf default) (recursive), label 80, weight 1, 00:04:47
+  *                      via 10.0.1.2, eth2 (vrf default), label 16/80, weight 1, 00:04:47
+C>* 10.0.3.0/24 is directly connected, eth1, 00:08:59
+B>  192.168.1.0/24 [20/0] via 1.1.1.1 (vrf default) (recursive), label 80, weight 1, 00:04:47
+  *                         via 10.0.1.2, eth2 (vrf default), label 16/80, weight 1, 00:04:47
+S>* 192.168.2.0/24 [1/0] via 10.0.3.5, eth1, weight 1, 00:08:59
+
+VRF default:
+K>* 0.0.0.0/0 [0/0] via 172.20.20.1, eth0, 00:09:02
+O>* 1.1.1.1/32 [110/20] via 10.0.1.2, eth2, label 16, weight 1, 00:08:10
+O>* 2.2.2.2/32 [110/10] via 10.0.1.2, eth2, weight 1, 00:08:11
+O   3.3.3.3/32 [110/0] is directly connected, lo, weight 1, 00:09:01
+C>* 3.3.3.3/32 is directly connected, lo, 00:09:01
+O>* 10.0.0.0/24 [110/20] via 10.0.1.2, eth2, label implicit-null, weight 1, 00:08:11
+O   10.0.1.0/24 [110/10] is directly connected, eth2, weight 1, 00:09:01
+C>* 10.0.1.0/24 is directly connected, eth2, 00:09:01
+O   172.20.20.0/24 [110/20] via 10.0.1.2, eth2, weight 1, 00:08:10
+C>* 172.20.20.0/24 is directly connected, eth0, 00:09:02
+
+VRF red:
+B>  10.0.4.0/24 [20/0] via 1.1.1.1 (vrf default) (recursive), label 81, weight 1, 00:04:47
+  *                      via 10.0.1.2, eth2 (vrf default), label 16/81, weight 1, 00:04:47
+C>* 10.0.5.0/24 is directly connected, eth3, 00:08:59
+B>  192.168.1.0/24 [20/12] via 1.1.1.1 (vrf default) (recursive), label 81, weight 1, 00:04:47
+  *                          via 10.0.1.2, eth2 (vrf default), label 16/81, weight 1, 00:04:47
+S>* 192.168.2.0/24 [1/0] via 10.0.5.7, eth3, weight 1, 00:08:59
 ```
